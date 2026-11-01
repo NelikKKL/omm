@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>omm - formulas in, 3D out</title>
+<style>
+  :root {
+    --paper: #eef2f5; --card: #ffffff; --grid: #d9e1e8; --line: #cfd8e0;
+    --ink: #14202b; --muted: #5b6b79; --accent: #1f6feb; --err: #b00020;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0e1419; --card: #141c24; --grid: #1c2833; --line: #26323d;
+      --ink: #e6edf3; --muted: #8b9aa8; --accent: #58a6ff; --err: #ff6b81;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 36px; }
+  header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; margin-bottom: 16px; }
+  .mark { font: italic 600 36px/1 ui-serif, Georgia, "Times New Roman", serif; letter-spacing: -0.02em; }
+  .mark i { color: var(--accent); font-style: normal; }
+  .tag { color: var(--muted); }
+
+  .lab { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 860px) { .lab { grid-template-columns: minmax(300px, 5fr) minmax(0, 7fr); align-items: start; } }
+
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .panel > h2 {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--line);
+    font: 600 11px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
+  }
+  .panel > h2 label { display: flex; align-items: center; gap: 8px; letter-spacing: .04em; }
+  .panel > h2 input[type=range] { width: 110px; accent-color: var(--accent); }
+
+  textarea {
+    display: block; width: 100%; height: 290px; margin: 0; padding: 12px; border: 0; resize: vertical;
+    background: transparent; color: inherit; outline: none; tab-size: 2;
+    font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--line); }
+  .chip {
+    padding: 4px 11px; border: 1px solid var(--line); border-radius: 999px; background: transparent;
+    color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;
+  }
+  .chip:hover, .chip:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+  .status {
+    min-height: 2.9em; margin: 0; padding: 8px 12px; border-top: 1px solid var(--line);
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted);
+  }
+  .status.err { color: var(--err); }
+
+  .view {
+    background-color: var(--card);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+  omm-model { height: min(68vh, 560px); min-height: 320px; }
+  omm-model::part(error) { display: none; }   /* errors are shown under the editor instead */
+
+  .hint { margin: 12px 2px 0; color: var(--muted); font-size: 13px; }
+  code { font: 0.92em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark">omm<i>.</i></div>
+    <div class="tag">formulas in, 3D out</div>
+  </header>
+
+  <div class="lab">
+    <section class="panel">
+      <h2><span>formula.omm</span></h2>
+      <textarea id="ed" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off"
+                aria-label="Formulas"></textarea>
+      <div class="chips" role="group" aria-label="Examples">
+        <button class="chip" data-example="torus">Torus</button>
+        <button class="chip" data-example="waves">Waves</button>
+        <button class="chip" data-example="mobius">Mobius</button>
+        <button class="chip" data-example="helicoid">Helicoid</button>
+        <button class="chip" data-example="scene">Scene</button>
+      </div>
+      <p class="status" id="status" role="status">loading...</p>
+    </section>
+
+    <section class="panel">
+      <h2>
+        <span>3D</span>
+        <label>resolution <input type="range" id="res" min="16" max="256" step="16" value="64"> <output id="resval">64</output></label>
+      </h2>
+      <div class="view">
+        <!-- Formulas live in a <script type="text/omm">: the browser does not parse its contents,
+             so characters like < and & are safe. Use src="file.omm" to load a file instead. -->
+        <omm-model id="model">
+          <script type="text/omm">
+# Edit me. Every statement is one model.
+let R = 2, r = 0.7
+
+((R + r*cos(v))*cos(u), (R + r*cos(v))*sin(u), r*sin(v))
+  for u in 0..2*pi, v in 0..2*pi
+          </script>
+        </omm-model>
+      </div>
+    </section>
+  </div>
+
+  <p class="hint">Drag to rotate, scroll or pinch to zoom, double-click to reset.
+     Models: <code>z = f(x,y)</code> and <code>(x(u,v), y(u,v), z(u,v))</code>; constants with <code>let</code>.</p>
+</div>
+
+<script src="../dist/omm.js"></script>
+<script>
+(function () {
+  var model = document.getElementById('model'), ed = document.getElementById('ed');
+  var status = document.getElementById('status');
+  var res = document.getElementById('res'), resval = document.getElementById('resval');
+  var timer = 0;
+
+  function say(text, isError) {
+    status.textContent = text;
+    status.className = 'status' + (isError ? ' err' : '');
+  }
+
+  // start with the formulas that are written in the page itself
+  ed.value = model.querySelector('script[type="text/omm"]').textContent.trim() + '\n';
+
+  model.addEventListener('omm-ready', function (e) {
+    var models = e.detail.models, tri = 0;
+    models.forEach(function (m) { tri += m.indices.length / 3; });
+    say('ok: ' + models.length + (models.length === 1 ? ' model, ' : ' models, ') + tri.toLocaleString() + ' triangles');
+  });
+  model.addEventListener('omm-error', function (e) { say(e.detail.error.message, true); });
+
+  ed.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () { model.source = ed.value; }, 250);
+  });
+
+  res.addEventListener('input', function () {
+    resval.textContent = res.value;
+    model.setAttribute('resolution', res.value);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-example]'), function (b) {
+    b.addEventListener('click', function () {
+      var name = b.getAttribute('data-example');
+      fetch(name + '.omm').then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      }).then(function (text) {
+        ed.value = text;
+        model.source = text;
+      }).catch(function (err) {
+        say('cannot load ' + name + '.omm (' + err.message + '). Serve this folder over http, e.g. "make serve".', true);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

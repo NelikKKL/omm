@@ -1,0 +1,12 @@
+{
+  "name": "omm",
+  "version": "0.1.0",
+  "description": "Math formulas in, 3D models out. A C core compiled to plain JavaScript with Emscripten.",
+  "private": true,
+  "main": "dist/omm.js",
+  "files": ["dist/omm.js"],
+  "scripts": {
+    "build": "make dist/omm.js",
+    "test": "make test"
+  }
+}

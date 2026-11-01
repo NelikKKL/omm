@@ -1,0 +1,60 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  EM_VERSION: 5.0.5   # pin the Emscripten version; bump it on purpose
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # Fast checks first: the C core under AddressSanitizer + UBSan.
+      - name: Native tests
+        run: make test-native
+
+      - name: Set up Emscripten
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: ${{ env.EM_VERSION }}
+
+      # -sWASM=0 makes Emscripten emit plain JavaScript (via wasm2js) instead of .wasm.
+      - name: Build the pure-JS bundle
+        run: make dist/omm.js
+
+      - name: Smoke test the bundle in Node
+        run: node test/smoke.js
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: omm-dist
+          path: dist/omm.js
+          if-no-files-found: error
+
+  # Push a tag like v0.1.0 to publish dist/omm.js as a GitHub Release.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: omm-dist
+          path: dist
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/omm.js --repo "$GITHUB_REPOSITORY" --generate-notes

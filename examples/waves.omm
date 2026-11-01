@@ -1,0 +1,3 @@
+# Ripples on water: a height field z = f(x, y).
+z = 2*sin(3*sqrt(x^2 + y^2)) / (1 + 2*sqrt(x^2 + y^2))
+  for x,y in -5..5
